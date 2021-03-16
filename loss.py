@@ -5,7 +5,7 @@ import torch
 from torch.distributions import normal
 import numpy as np
 import copy
-
+from tqdm import tqdm
 from opt import opt
 
 batch_size = opt.batchid * opt.batchimage
@@ -19,6 +19,7 @@ class Loss(loss._Loss):
         self.l1_loss = L1Loss()
         self.bce_loss = BCELoss()
         self.cross_entropy_loss = CrossEntropyLoss()
+        self.quant_loss = torch.nn.MSELoss()
         
         self.model = model
         self.optimizer, self.optimizer_D = get_optimizer(model)
@@ -112,6 +113,9 @@ class Loss(loss._Loss):
         for i in range(np.size(list_mu)):
             loss_KL += torch.sum(0.5 * (list_mu[i]**2 + torch.exp(list_lv[i]) - list_lv[i] - 1))
         return loss_KL/np.size(list_mu)
+
+    def Quant_loss(self, encoder_f):
+        return self.quant_loss(encoder_f, torch.sign(encoder_f).detach())
     
     def GAN_loss(self, inputs, outputs, labels):
         id = outputs[0]
@@ -195,7 +199,7 @@ class Loss(loss._Loss):
             CrossEntropy_Loss = self.id_related_loss(labels, outputs)
             loss_sum = CrossEntropy_Loss
             
-            print('\rCE:%.2f' % (CrossEntropy_Loss.data.cpu().numpy()), end=' ')
+            tqdm.write('CE:%.2f' % (CrossEntropy_Loss.data.cpu().numpy()))
                     
         elif opt.stage == 2:
             D_loss, G_loss, auto_imgr_loss, ps_imgr_loss, sep_imgr_loss\
@@ -204,29 +208,32 @@ class Loss(loss._Loss):
             
             loss_sum = G_loss + KL_loss/1000
                         
-            print('\rD_loss:%.2f  G_loss:%.2f A_ImgR:%.2f  PS_ImgR:%.2f  Sep_PS:%.2f  KL:%.2f' % (
+            tqdm.write('D_loss:%.2f  G_loss:%.2f A_ImgR:%.2f  PS_ImgR:%.2f  Sep_PS:%.2f  KL:%.2f' % (
                 D_loss.data.cpu().numpy(),
                 G_loss.data.cpu().numpy(),
                 auto_imgr_loss.data.cpu().numpy(),
                 ps_imgr_loss.data.cpu().numpy(),
                 sep_imgr_loss.data.cpu().numpy(),
-                KL_loss.data.cpu().numpy()), end=' ')
+                KL_loss.data.cpu().numpy()))
                     
         elif opt.stage == 3:
             CrossEntropy_Loss = self.id_related_loss(labels, outputs)
             D_loss, G_loss, auto_imgr_loss, ps_imgr_loss, sep_imgr_loss\
                     = self.GAN_loss(inputs, outputs, labels)
             KL_loss = self.KL_loss(outputs)
+            Quant_loss = self.Quant_loss(outputs[0])
                         
-            loss_sum = (CrossEntropy_Loss*2)*10 + G_loss + KL_loss/100
+            loss_sum = (CrossEntropy_Loss*2)*10 + G_loss + KL_loss/100 + Quant_loss
             
-            print('\rCE:%.2f  D_loss:%.2f  G_loss:%.2f  A_ImgR:%.2f  PS_ImgR:%.2f  Sep_PS:%.2f  KL:%.2f' % (
+            tqdm.write('CE:%.2f  D_loss:%.2f  G_loss:%.2f  A_ImgR:%.2f  PS_ImgR:%.2f  Sep_PS:%.2f  KL:%.2f QNT:%.2f' % (
                 CrossEntropy_Loss.data.cpu().numpy(),
                 D_loss.data.cpu().numpy(),
                 G_loss.data.cpu().numpy(),
                 auto_imgr_loss.data.cpu().numpy(),
                 ps_imgr_loss.data.cpu().numpy(),
                 sep_imgr_loss.data.cpu().numpy(),
-                KL_loss.data.cpu().numpy()), end=' ')
+                KL_loss.data.cpu().numpy(),
+                Quant_loss.data.cpu().numpy()
+            ))
             
         return loss_sum

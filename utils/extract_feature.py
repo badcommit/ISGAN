@@ -12,8 +12,8 @@ def extract_feature(model, loader):
             outputs = model.C(input_img)
             f = outputs[0].data.cpu()
             ff = ff + f
-
-        fnorm = torch.norm(ff, p=2, dim=1, keepdim=True)
-        ff = ff.div(fnorm.expand_as(ff))
+        ff = torch.sign(ff)
+        # fnorm = torch.norm(ff, p=2, dim=1, keepdim=True)
+        # ff = ff.div(fnorm.expand_as(ff))
         features = torch.cat((features, ff), 0)
     return features

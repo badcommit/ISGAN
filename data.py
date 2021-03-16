@@ -87,7 +87,8 @@ class Market1501(dataset.Dataset):
         :param file_path: unix style file path
         :return: person id
         """
-        return int(file_path.split('/')[-1].split('_')[0])
+        f = os.path.basename(file_path)
+        return int(f.split('_')[0])
 
     @staticmethod
     def camera(file_path):

@@ -228,11 +228,12 @@ class Encoder(nn.Module):
         
         id = torch.cat(
             [fg_p0_id, fg_p1_id, f0_p1_id, f1_p1_id, fg_p2_id, f0_p2_id, f1_p2_id, f2_p2_id], dim=1)
+        hashId = torch.tanh(id)
         nid = torch.cat(
             [fc_zg_p0_nid, fc_zg_p1_nid, fc_z0_p1_nid, fc_z1_p1_nid, 
              fc_zg_p2_nid, fc_z0_p2_nid, fc_z1_p2_nid, fc_z2_p2_nid], dim=1)
         
-        return id, lg_p0, lg_p1, l0_p1, l1_p1, lg_p2, l0_p2, l1_p2, l2_p2, list_mu, list_lv, nid
+        return hashId, lg_p0, lg_p1, l0_p1, l1_p1, lg_p2, l0_p2, l1_p2, l2_p2, list_mu, list_lv, nid
     
 class Generator(nn.Module):
     def __init__(self, output_dim=3):

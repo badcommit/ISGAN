@@ -36,8 +36,8 @@ class Main():
         self.scheduler.step()
         self.scheduler_D.step()
         self.model.train()
-                
-        for batch, (inputs, labels) in enumerate(self.train_loader):
+        batch = 0
+        for (inputs, labels) in tqdm(self.train_loader, total=len(self.train_loader)):
             if inputs.size()[0] != opt.batchid * opt.batchimage: continue
             inputs = inputs.to(opt.device)
             labels = labels.to(opt.device)
@@ -54,6 +54,7 @@ class Main():
                 G_loss = self.loss(inputs, labels, batch)
                 G_loss.backward()
                 self.loss.optimizer.step()
+            batch += 1
                                                                 
     def evaluate(self, save_path):
 
@@ -144,7 +145,7 @@ if __name__ == '__main__':
             
             print('\nepoch', epoch)
             main.train()
-            
+            # TODO
             if epoch % 50 == 0:
                 os.makedirs(opt.save_path, exist_ok=True)
                 weight_save_path = opt.save_path + opt.name + \
